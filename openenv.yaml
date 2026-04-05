@@ -1,0 +1,98 @@
+name: msme-payment-dispute
+version: "2.0.0"
+description: >
+  An OpenEnv environment where an AI agent learns to handle MSME
+  (Micro, Small and Medium Enterprise) payment disputes in India.
+  Tasks: classify disputes, extract legal facts, draft demand letters.
+
+author: Bezawada Haritha
+domain: legal-assistance
+language: en
+tags: [legal, india, msme, payment-dispute, nlp]
+
+tasks:
+  - id: 1
+    name: classify_dispute
+    difficulty: easy
+    description: >
+      Given an MSME payment dispute email, classify it as
+      delayed_payment, partial_payment, or payment_denial.
+    observation_space:
+      type: text
+      fields: [email.subject, email.body]
+    action_space:
+      type: categorical
+      values: [delayed_payment, partial_payment, payment_denial]
+    reward_range: [0.0, 1.0]
+    reward_description: >
+      1.0 exact match, 0.4 adjacent class, 0.0 wrong class.
+
+  - id: 2
+    name: extract_facts
+    difficulty: medium
+    description: >
+      Extract structured legal facts from a formal MSME payment notice:
+      claimant, opponent, amount, due_date, days_overdue.
+    observation_space:
+      type: text
+      fields: [email.subject, email.body]
+    action_space:
+      type: structured
+      fields:
+        claimant:     {type: string}
+        opponent:     {type: string}
+        amount:       {type: integer, unit: INR}
+        due_date:     {type: string}
+        days_overdue: {type: integer}
+    reward_range: [0.0, 1.0]
+    reward_description: >
+      Weighted field accuracy:
+      claimant=0.25, opponent=0.25, amount=0.25,
+      days_overdue=0.15, due_date=0.10.
+
+  - id: 3
+    name: draft_demand_letter
+    difficulty: hard
+    description: >
+      Draft a professional MSME payment demand letter citing the
+      MSMED Act 2006, stating interest and legal consequences.
+      In sequential mode, context is built from Tasks 1 and 2.
+    observation_space:
+      type: structured
+      fields: [claimant, opponent, amount, invoice_no, due_date,
+               days_overdue, dispute_type, evidence]
+    action_space:
+      type: text
+      min_words: 150
+    reward_range: [0.0, 1.0]
+    reward_description: >
+      0.5 * rule_based (completeness + legal_elements + tone + length)
+      + 0.5 * llm_judge (temperature=0, deterministic).
+
+modes:
+  - name: single
+    description: One task per episode. reset(task_id=1|2|3).
+  - name: sequential
+    description: >
+      All 3 tasks chained in one episode. Agent's Task1 classification
+      and Task2 facts are injected into Task3 context — wrong early
+      answers genuinely degrade final letter quality.
+
+api:
+  base_url: "/"
+  endpoints:
+    reset: {method: POST, path: /reset}
+    step:  {method: POST, path: /step}
+    state: {method: GET,  path: /state}
+    tasks: {method: GET,  path: /tasks}
+    health:{method: GET,  path: /health}
+
+inference:
+  script: inference.py
+  max_runtime_minutes: 10
+  stdout_format: "[START]/[STEP]/[END]"
+  requires_env_vars:
+    - API_BASE_URL
+    - MODEL_NAME
+    - HF_TOKEN
+  seeds: [42]
