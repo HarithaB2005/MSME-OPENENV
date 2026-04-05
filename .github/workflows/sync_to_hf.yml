@@ -15,4 +15,4 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://BHaritha:$HF_TOKEN@huggingface.co/spaces/BHaritha/MSME-OPENENV main
+        run: git push --force https://BHaritha:$HF_TOKEN@huggingface.co/spaces/BHaritha/msme-openenv main
