@@ -1,1 +1,0 @@
-This project leverages advanced AI technology to assist Micro, Small, and Medium Enterprises (MSMEs) in effectively resolving payment disputes. Our intelligent agents facilitate seamless communication and dispute management, empowering MSMEs to focus on growth and innovation while we handle the complexities of payment challenges.
