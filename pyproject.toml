@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "msme-payment-dispute-openenv"
+version = "2.0.0"
+description = "OpenEnv environment for MSME payment dispute resolution tasks"
+requires-python = ">=3.10"
