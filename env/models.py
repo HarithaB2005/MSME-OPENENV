@@ -23,7 +23,11 @@ class Task2Action(BaseModel):
     days_overdue: int   = Field(..., ge=0)
 
 class Task3Action(BaseModel):
-    letter: str = Field(..., min_length=50)
+    letter: str = Field(
+        ...,
+        min_length=500,
+        description="Full formal demand letter text; target at least 150 words.",
+    )
 
 class MSMEAction(BaseModel):
     """Union action — agent fills whichever field matches current task."""
