@@ -22,6 +22,8 @@ ENV_URL      = os.environ.get("ENV_URL",       "http://localhost:7860")
 ENV_NAME     = "msme-dispute"
 
 client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+http = requests.Session()
+http.trust_env = False
 
 # ── Logging (mandatory format) ─────────────────
 def log_start(task_name):
@@ -43,8 +45,8 @@ def log_end(success, steps, rewards):
 # ── Environment calls ──────────────────────────
 def call_env(endpoint, payload=None, method="POST"):
     url = f"{ENV_URL}/{endpoint}"
-    r = requests.get(url, timeout=30) if method == "GET" else \
-        requests.post(url, json=payload, timeout=60)
+    r = http.get(url, timeout=30) if method == "GET" else \
+        http.post(url, json=payload, timeout=60)
     r.raise_for_status()
     return r.json()
 
