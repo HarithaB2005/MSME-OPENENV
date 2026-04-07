@@ -23,8 +23,10 @@ def health():
     return {"status": "ok"}
 
 @app.post("/reset", response_model=ResetResponse)
-def reset(req: ResetRequest):
+def reset(req: ResetRequest | None = None):
     try:
+        if req is None:
+            req = ResetRequest()
         obs = env.reset(task_id=req.task_id, seed=req.seed, mode=req.mode)
         return ResetResponse(observation=obs, state=env.state())
     except ValueError as e:
