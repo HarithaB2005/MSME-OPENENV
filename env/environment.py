@@ -147,9 +147,11 @@ class MSMEDisputeEnv:
         if self._task_id == 3 and result.get("needs_revision") and self._t3_turn < 3:
             self._t3_turn += 1
             done = False  # not done yet — agent should revise
+            self._done = False
         else:
             self._t3_done = True
             done = True
+            self._done = True
 
         return {
             "state":    self.state(),
