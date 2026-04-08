@@ -1,6 +1,6 @@
 """
 graders.py - MSME Payment Dispute OpenEnv Graders
-All graders return float in (0.0, 1.0) — strictly between, not at boundaries.
+All graders return float in [0.0, 1.0].
 FIX 3: temperature=0 on LLM judge for deterministic, reproducible scores.
 """
 import os
@@ -14,8 +14,8 @@ ADJACENT = {
     "payment_denial":   {"partial_payment"},
 }
 
-def _strict_score(score: float, eps: float = 0.001) -> float:
-    """Keep scores strictly inside (0, 1) for validator compatibility."""
+def _strict_score(score: float, eps: float = 0.01) -> float:
+    """Keep scores strictly inside (0, 1), including after 2-decimal log formatting."""
     return max(eps, min(1.0 - eps, float(score)))
 
 # ── Task 1 ────────────────────────────────────
@@ -91,11 +91,11 @@ def _dates_match(a: str, b: str) -> bool:
 def grade_task2(action: dict, ground_truth: dict) -> dict:
     weights = {"claimant": 0.25, "opponent": 0.25, "amount": 0.25, "due_date": 0.10, "days_overdue": 0.15}
     breakdown = {}
-    breakdown["claimant"]     = _strict_score(1.0 if _names_match(str(action.get("claimant","")), str(ground_truth["claimant"])) else 0.0)
-    breakdown["opponent"]     = _strict_score(1.0 if _names_match(str(action.get("opponent","")), str(ground_truth["opponent"])) else 0.0)
-    breakdown["amount"]       = _strict_score(1.0 if _amount_match(action.get("amount",-1), ground_truth["amount"]) else 0.0)
-    breakdown["due_date"]     = _strict_score(1.0 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.0)
-    breakdown["days_overdue"] = _strict_score(1.0 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.0)
+    breakdown["claimant"]     = 1.0 if _names_match(str(action.get("claimant","")), str(ground_truth["claimant"])) else 0.0
+    breakdown["opponent"]     = 1.0 if _names_match(str(action.get("opponent","")), str(ground_truth["opponent"])) else 0.0
+    breakdown["amount"]       = 1.0 if _amount_match(action.get("amount",-1), ground_truth["amount"]) else 0.0
+    breakdown["due_date"]     = 1.0 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.0
+    breakdown["days_overdue"] = 1.0 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.0
     score = sum(weights[k] * breakdown[k] for k in weights)
     return {"score": round(_strict_score(score), 3), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
 
@@ -112,10 +112,10 @@ def _rule_based_score(letter: str, criteria: dict) -> dict:
     length_score = min(1.0, len(letter.split()) / 150)
 
     return {
-        "completeness":    round(_strict_score(completeness), 2),
-        "legal_elements":  round(_strict_score(legal_score), 2),
-        "tone":            round(_strict_score(tone_score), 2),
-        "length":          round(_strict_score(length_score), 2),
+        "completeness":    round(completeness, 2),
+        "legal_elements":  round(legal_score, 2),
+        "tone":            round(tone_score, 2),
+        "length":          round(length_score, 2),
     }
 
 def grade_task3(action: dict, scenario: dict) -> dict:
@@ -163,7 +163,7 @@ Respond with ONLY a single float. Example: 0.74"""
             )
             raw = resp.choices[0].message.content.strip()
             llm_score = float(re.findall(r"\d+\.?\d*", raw)[0])
-            llm_score = _strict_score(max(0.0, min(1.0, llm_score)))
+            llm_score = max(0.0, min(1.0, llm_score))
     except Exception:
         llm_score = None
 
