@@ -14,6 +14,8 @@ Required env vars:
 """
 import os, sys, json, re, requests
 from openai import OpenAI
+from requests.exceptions import RequestException
+import time
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME   = os.environ.get("MODEL_NAME",   "gpt-4o-mini")
@@ -46,10 +48,18 @@ def log_end(success, steps, rewards):
 # ── Environment calls ──────────────────────────
 def call_env(endpoint, payload=None, method="POST"):
     url = f"{ENV_URL}/{endpoint}"
-    r = http.get(url, timeout=30) if method == "GET" else \
-        http.post(url, json=payload, timeout=60)
-    r.raise_for_status()
-    return r.json()
+    last_err = None
+    for attempt in range(3):
+        try:
+            r = http.get(url, timeout=30) if method == "GET" else \
+                http.post(url, json=payload, timeout=60)
+            r.raise_for_status()
+            return r.json()
+        except RequestException as e:
+            last_err = e
+            if attempt < 2:
+                time.sleep(0.7 * (attempt + 1))
+    raise last_err
 
 # ── LLM helper ────────────────────────────────
 def llm(prompt):
@@ -247,7 +257,8 @@ def run_episode(task_id, seed=42):
 
     except Exception as e:
         last_error = str(e)
-        log_step(steps + 1, {}, 0.0, True, error=last_error)
+        # Keep reward in strict (0,1) even on transport/runtime failures.
+        log_step(steps + 1, {}, 0.01, True, error=last_error)
         success = False
 
     log_end(success, steps, rewards)
@@ -286,7 +297,8 @@ def run_sequential_episode(seed=42):
 
     except Exception as e:
         last_error = str(e)
-        log_step(steps + 1, {}, 0.0, True, error=last_error)
+        # Keep reward in strict (0,1) even on transport/runtime failures.
+        log_step(steps + 1, {}, 0.01, True, error=last_error)
         success = False
 
     log_end(success, steps, rewards)
