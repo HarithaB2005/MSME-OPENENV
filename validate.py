@@ -58,7 +58,7 @@ for tid in [1, 2, 3]:
         return r.status_code == 200 and has_obs, f"status={r.status_code}, has_observation={has_obs}"
     check(f"reset(task_id={tid}) returns observation", test_reset)
 
-# 7-9. step() returns reward in [0,1] for all tasks
+# 7-9. step() returns reward strictly in (0,1) for all tasks
 dummy_actions = {
     1: {"label": "delayed_payment"},
     2: {"claimant": "Test Co", "opponent": "Other Co", "amount": 50000, "due_date": "31st March 2024", "days_overdue": 30},
@@ -70,9 +70,9 @@ for tid in [1, 2, 3]:
         r = requests.post(f"{ENV_URL}/step", json={"action": dummy_actions[t]}, timeout=30)
         data = r.json()
         reward = data.get("reward", -1)
-        in_range = 0.0 <= float(reward) <= 1.0
+        in_range = 0.0 < float(reward) < 1.0
         return r.status_code == 200 and in_range, f"reward={reward:.3f} (valid={in_range})"
-    check(f"step() task {tid} returns reward in [0,1]", test_step)
+    check(f"step() task {tid} returns reward in (0,1)", test_step)
 
 # 10. state() endpoint
 def test_state():
