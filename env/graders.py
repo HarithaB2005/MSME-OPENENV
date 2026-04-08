@@ -14,17 +14,21 @@ ADJACENT = {
     "payment_denial":   {"partial_payment"},
 }
 
+def _strict_score(score: float, eps: float = 0.001) -> float:
+    """Keep scores strictly inside (0, 1) for validator compatibility."""
+    return max(eps, min(1.0 - eps, float(score)))
+
 # ── Task 1 ────────────────────────────────────
 def grade_task1(action: dict, ground_truth: dict) -> dict:
     predicted = str(action.get("label", "")).strip().lower()
     expected  = str(ground_truth.get("label", "")).strip().lower()
     if predicted not in VALID_LABELS:
-        return {"score": 0.0, "reason": f"Invalid label '{predicted}'"}
+        return {"score": _strict_score(0.0), "reason": f"Invalid label '{predicted}'"}
     if predicted == expected:
-        return {"score": 1.0, "reason": "Exact match"}
+        return {"score": _strict_score(1.0), "reason": "Exact match"}
     if predicted in ADJACENT.get(expected, set()):
-        return {"score": 0.4, "reason": f"Adjacent class (got '{predicted}', expected '{expected}')"}
-    return {"score": 0.0, "reason": f"Wrong class (got '{predicted}', expected '{expected}')"}
+        return {"score": _strict_score(0.4), "reason": f"Adjacent class (got '{predicted}', expected '{expected}')"}
+    return {"score": _strict_score(0.0), "reason": f"Wrong class (got '{predicted}', expected '{expected}')"}
 
 # ── Task 2 ────────────────────────────────────
 def _normalise_name(name: str) -> str:
@@ -93,7 +97,7 @@ def grade_task2(action: dict, ground_truth: dict) -> dict:
     breakdown["due_date"]     = 1.0 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.0
     breakdown["days_overdue"] = 1.0 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.0
     score = sum(weights[k] * breakdown[k] for k in weights)
-    return {"score": round(score, 3), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
+    return {"score": round(_strict_score(score), 3), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
 
 # ── Task 3 ────────────────────────────────────
 def _rule_based_score(letter: str, criteria: dict) -> dict:
@@ -117,7 +121,7 @@ def _rule_based_score(letter: str, criteria: dict) -> dict:
 def grade_task3(action: dict, scenario: dict) -> dict:
     letter = str(action.get("letter", "")).strip()
     if not letter:
-        return {"score": 0.0, "breakdown": {}, "reason": "Empty letter"}
+        return {"score": _strict_score(0.0), "breakdown": {}, "reason": "Empty letter"}
 
     criteria = scenario.get("grading_criteria", {})
     rb = _rule_based_score(letter, criteria)
@@ -164,10 +168,10 @@ Respond with ONLY a single float. Example: 0.74"""
         llm_score = None
 
     if llm_score is not None:
-        final  = round(0.5 * rb_combined + 0.5 * llm_score, 3)
+        final  = round(_strict_score(0.5 * rb_combined + 0.5 * llm_score), 3)
         method = "rule_based + llm_judge (temp=0)"
     else:
-        final  = round(rb_combined, 3)
+        final  = round(_strict_score(rb_combined), 3)
         method = "rule_based_only"
 
     return {
