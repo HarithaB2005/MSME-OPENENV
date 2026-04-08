@@ -25,7 +25,8 @@ tasks:
       values: [delayed_payment, partial_payment, payment_denial]
     reward_range: [0.0, 1.0]
     reward_description: >
-      1.0 exact match, 0.4 adjacent class, 0.0 wrong class.
+      Scores are clamped strictly to (0,1) for validator compatibility:
+      exact~0.99, adjacent=0.4, wrong/invalid~0.01.
 
   - id: 2
     name: extract_facts
@@ -49,6 +50,7 @@ tasks:
       Weighted field accuracy:
       claimant=0.25, opponent=0.25, amount=0.25,
       days_overdue=0.15, due_date=0.10.
+      Final score is clamped strictly to (0,1).
 
   - id: 3
     name: draft_demand_letter
@@ -68,6 +70,7 @@ tasks:
     reward_description: >
       0.5 * rule_based (completeness + legal_elements + tone + length)
       + 0.5 * llm_judge (temperature=0, deterministic).
+      Final score is clamped strictly to (0,1).
 
 modes:
   - name: single

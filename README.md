@@ -70,7 +70,8 @@ python inference.py
 ## Reward Function
 
 ```
-Task 1: exact_match=1.0, adjacent_class=0.4, wrong=0.0
-Task 2: 0.25*claimant + 0.25*opponent + 0.25*amount + 0.15*days_overdue + 0.10*due_date
-Task 3: 0.5*(completeness+legal+tone+length) + 0.5*llm_judge
+All task rewards are clamped strictly to (0, 1) for validator compatibility.
+Task 1: exact_match~0.99, adjacent_class=0.4, wrong/invalid~0.01
+Task 2: weighted field accuracy (claimant/opponent/amount/days_overdue/due_date), clamped to (0,1)
+Task 3: 0.5*(completeness+legal+tone+length) + 0.5*llm_judge, clamped to (0,1)
 ```
