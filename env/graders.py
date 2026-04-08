@@ -1,6 +1,6 @@
 """
 graders.py - MSME Payment Dispute OpenEnv Graders
-All graders return float in [0.0, 1.0].
+All graders return float strictly in (0, 1) — never 0.0 or 1.0.
 FIX 3: temperature=0 on LLM judge for deterministic, reproducible scores.
 """
 import os
@@ -14,9 +14,12 @@ ADJACENT = {
     "payment_denial":   {"partial_payment"},
 }
 
-def _strict_score(score: float, eps: float = 0.01) -> float:
-    """Keep scores strictly inside (0, 1), including after 2-decimal log formatting."""
-    return max(eps, min(1.0 - eps, float(score)))
+def _strict_score(score: float, eps: float = 0.001) -> float:
+    """Keep scores strictly inside (0, 1) — guaranteed no 0.0 or 1.0 even after rounding."""
+    s = max(eps, min(1.0 - eps, float(score)))
+    # Round to 3 decimals, then re-apply strict bounds to handle rounding edge cases
+    rounded = round(s, 3)
+    return max(eps, min(1.0 - eps, rounded))
 
 # ── Task 1 ────────────────────────────────────
 def grade_task1(action: dict, ground_truth: dict) -> dict:
@@ -97,7 +100,7 @@ def grade_task2(action: dict, ground_truth: dict) -> dict:
     breakdown["due_date"]     = _strict_score(1.0 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.0)
     breakdown["days_overdue"] = _strict_score(1.0 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.0)
     score = sum(weights[k] * breakdown[k] for k in weights)
-    return {"score": round(_strict_score(score), 3), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
+    return {"score": _strict_score(score), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
 
 # ── Task 3 ────────────────────────────────────
 def _rule_based_score(letter: str, criteria: dict) -> dict:
@@ -112,10 +115,10 @@ def _rule_based_score(letter: str, criteria: dict) -> dict:
     length_score = min(1.0, len(letter.split()) / 150)
 
     return {
-        "completeness":    round(_strict_score(completeness), 3),
-        "legal_elements":  round(_strict_score(legal_score), 3),
-        "tone":            round(_strict_score(tone_score), 3),
-        "length":          round(_strict_score(length_score), 3),
+        "completeness":    _strict_score(completeness),
+        "legal_elements":  _strict_score(legal_score),
+        "tone":            _strict_score(tone_score),
+        "length":          _strict_score(length_score),
     }
 
 def grade_task3(action: dict, scenario: dict) -> dict:
@@ -168,10 +171,10 @@ Respond with ONLY a single float. Example: 0.74"""
         llm_score = None
 
     if llm_score is not None:
-        final  = round(_strict_score(0.5 * rb_combined + 0.5 * llm_score), 3)
+        final  = _strict_score(0.5 * rb_combined + 0.5 * llm_score)
         method = "rule_based + llm_judge (temp=0)"
     else:
-        final  = round(_strict_score(rb_combined), 3)
+        final  = _strict_score(rb_combined)
         method = "rule_based_only"
 
     return {
@@ -182,10 +185,6 @@ Respond with ONLY a single float. Example: 0.74"""
 
 
 # ── Task 3 Multi-turn grader ──────────────────
-# Critic suggestion: make Task 3 interactive.
-# Environment gives structured feedback after draft,
-# agent can revise. Up to 2 revision rounds.
-
 FEEDBACK_CHECKS = [
     ("MSMED Act 2006",      "msmed act",      "You did not cite the MSMED Act 2006. Add it explicitly."),
     ("interest rate",       "interest",       "You did not mention interest on overdue amount. Add compound interest at 3x RBI rate."),
