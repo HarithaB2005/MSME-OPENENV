@@ -19,9 +19,9 @@ Millions of small businesses in India face delayed payments from buyers. Most MS
 
 | Task | Difficulty | Description | Scoring |
 |------|-----------|-------------|---------|
-| 1 | Easy | Classify dispute type from email | Exact match (1.0), adjacent class (0.4), wrong (0.0) |
-| 2 | Medium | Extract structured facts from formal notice | Weighted field accuracy across 5 fields |
-| 3 | Hard | Draft a formal demand letter | Rule-based + LLM-as-judge (0.0–1.0) |
+| 1 | Easy | Classify dispute type from email | Exact match (0.999), adjacent class (0.40), wrong (0.001) |
+| 2 | Medium | Extract structured facts from formal notice | Weighted field accuracy across 5 fields, clamped to (0, 1) |
+| 3 | Hard | Draft a formal demand letter | Rule-based + LLM-as-judge, clamped to (0, 1) |
 
 ## Action & Observation Spaces
 
@@ -71,7 +71,7 @@ python inference.py
 
 ```
 All task rewards are clamped strictly to (0, 1) for validator compatibility.
-Task 1: exact_match~0.99, adjacent_class=0.4, wrong/invalid~0.01
+Task 1: exact_match=0.999, adjacent_class=0.40, wrong/invalid=0.001
 Task 2: weighted field accuracy (claimant/opponent/amount/days_overdue/due_date), clamped to (0,1)
 Task 3: 0.5*(completeness+legal+tone+length) + 0.5*llm_judge, clamped to (0,1)
 ```

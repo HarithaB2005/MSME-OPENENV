@@ -3,7 +3,7 @@ inference.py - MSME Payment Dispute Baseline Agent
 
 STDOUT FORMAT (mandatory):
   [START] task=<name> env=msme-dispute model=<model>
-  [STEP]  step=<n> action=<json> reward=<0.00> done=<true|false> error=<null|msg>
+  [STEP]  step=<n> action=<json> reward=<0.001> done=<true|false> error=<null|msg>
   [END]   success=<true|false> steps=<n> rewards=<r1,r2,...>
 
 CRITICAL: reward in [STEP] must NEVER be 0.00 or 1.00 — always strictly between.
@@ -15,6 +15,10 @@ MODEL_NAME   = os.environ.get("MODEL_NAME",   "gpt-4o-mini")
 HF_TOKEN     = os.environ.get("HF_TOKEN",     "")
 ENV_URL      = os.environ.get("ENV_URL",       "http://localhost:7860")
 ENV_NAME     = "msme-dispute"
+
+
+def _strict_display_reward(value):
+    return max(0.001, min(0.999, float(value)))
 
 # Pre-written fallback actions — used when LLM API is unavailable.
 # These are real answers that will score > 0.05 from the grader.
@@ -60,12 +64,14 @@ def log_start(task):
 def log_step(step, action, reward, done, error=None):
     a = json.dumps(action, separators=(',',':')).replace('\n',' ').replace('\r','')[:200] \
         if isinstance(action, dict) else str(action)[:200]
-    print(f"[STEP] step={step} action={a} reward={reward:.2f} "
+    display_reward = _strict_display_reward(reward)
+    print(f"[STEP] step={step} action={a} reward={display_reward:.3f} "
           f"done={'true' if done else 'false'} error={error or 'null'}", flush=True)
 
 def log_end(success, steps, rewards):
+    display_rewards = ','.join(f'{_strict_display_reward(r):.3f}' for r in rewards)
     print(f"[END] success={'true' if success else 'false'} steps={steps} "
-          f"rewards={','.join(f'{r:.2f}' for r in rewards)}", flush=True)
+          f"rewards={display_rewards}", flush=True)
 
 # ── Env + LLM ─────────────────────────────────
 def call_env(ep, payload=None, method="POST"):

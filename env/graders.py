@@ -1,6 +1,6 @@
 """
 graders.py - MSME Payment Dispute OpenEnv Graders
-All graders return float strictly in (0, 1) — never 0.0 or 1.0.
+All graders return float in [0.001, 0.999].
 FIX 3: temperature=0 on LLM judge for deterministic, reproducible scores.
 """
 import os
@@ -15,23 +15,20 @@ ADJACENT = {
 }
 
 def _strict_score(score: float, eps: float = 0.001) -> float:
-    """Keep scores strictly inside (0, 1) — guaranteed no 0.0 or 1.0 even after rounding."""
-    s = max(eps, min(1.0 - eps, float(score)))
-    # Round to 3 decimals, then re-apply strict bounds to handle rounding edge cases
-    rounded = round(s, 3)
-    return max(eps, min(1.0 - eps, rounded))
+    """Keep scores strictly inside (0, 1), including after 2-decimal log formatting."""
+    return max(eps, min(1.0 - eps, float(score)))
 
 # ── Task 1 ────────────────────────────────────
 def grade_task1(action: dict, ground_truth: dict) -> dict:
     predicted = str(action.get("label", "")).strip().lower()
     expected  = str(ground_truth.get("label", "")).strip().lower()
     if predicted not in VALID_LABELS:
-        return {"score": _strict_score(0.0), "reason": f"Invalid label '{predicted}'"}
+        return {"score": _strict_score(0.001), "reason": f"Invalid label '{predicted}'"}
     if predicted == expected:
-        return {"score": _strict_score(1.0), "reason": "Exact match"}
+        return {"score": _strict_score(0.999), "reason": "Exact match"}
     if predicted in ADJACENT.get(expected, set()):
         return {"score": _strict_score(0.4), "reason": f"Adjacent class (got '{predicted}', expected '{expected}')"}
-    return {"score": _strict_score(0.0), "reason": f"Wrong class (got '{predicted}', expected '{expected}')"}
+    return {"score": _strict_score(0.001), "reason": f"Wrong class (got '{predicted}', expected '{expected}')"}
 
 # ── Task 2 ────────────────────────────────────
 def _normalise_name(name: str) -> str:
@@ -94,13 +91,13 @@ def _dates_match(a: str, b: str) -> bool:
 def grade_task2(action: dict, ground_truth: dict) -> dict:
     weights = {"claimant": 0.25, "opponent": 0.25, "amount": 0.25, "due_date": 0.10, "days_overdue": 0.15}
     breakdown = {}
-    breakdown["claimant"]     = _strict_score(1.0 if _names_match(str(action.get("claimant","")), str(ground_truth["claimant"])) else 0.0)
-    breakdown["opponent"]     = _strict_score(1.0 if _names_match(str(action.get("opponent","")), str(ground_truth["opponent"])) else 0.0)
-    breakdown["amount"]       = _strict_score(1.0 if _amount_match(action.get("amount",-1), ground_truth["amount"]) else 0.0)
-    breakdown["due_date"]     = _strict_score(1.0 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.0)
-    breakdown["days_overdue"] = _strict_score(1.0 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.0)
+    breakdown["claimant"]     = _strict_score(0.999 if _names_match(str(action.get("claimant","")), str(ground_truth["claimant"])) else 0.001)
+    breakdown["opponent"]     = _strict_score(0.999 if _names_match(str(action.get("opponent","")), str(ground_truth["opponent"])) else 0.001)
+    breakdown["amount"]       = _strict_score(0.999 if _amount_match(action.get("amount",-1), ground_truth["amount"]) else 0.001)
+    breakdown["due_date"]     = _strict_score(0.999 if _dates_match(str(action.get("due_date","")), str(ground_truth["due_date"])) else 0.001)
+    breakdown["days_overdue"] = _strict_score(0.999 if _days_match(action.get("days_overdue",-1), ground_truth["days_overdue"]) else 0.001)
     score = sum(weights[k] * breakdown[k] for k in weights)
-    return {"score": _strict_score(score), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
+    return {"score": round(_strict_score(score), 3), "breakdown": breakdown, "reason": f"Field accuracy: {score:.2f}"}
 
 # ── Task 3 ────────────────────────────────────
 def _rule_based_score(letter: str, criteria: dict) -> dict:
@@ -111,20 +108,20 @@ def _rule_based_score(letter: str, criteria: dict) -> dict:
 
     completeness = sum(1 for m in must  if m.lower() in letter_lower) / len(must)  if must  else 0.5
     legal_score  = sum(1 for l in legal if l.lower() in letter_lower) / len(legal) if legal else 0.5
-    tone_score   = max(0.0, 1.0 - sum(1 for b in bad if b.lower() in letter_lower) * 0.3)
-    length_score = min(1.0, len(letter.split()) / 150)
+    tone_score   = max(0.001, 0.999 - sum(1 for b in bad if b.lower() in letter_lower) * 0.3)
+    length_score = min(0.999, len(letter.split()) / 150)
 
     return {
-        "completeness":    _strict_score(completeness),
-        "legal_elements":  _strict_score(legal_score),
-        "tone":            _strict_score(tone_score),
-        "length":          _strict_score(length_score),
+        "completeness":    round(_strict_score(completeness), 3),
+        "legal_elements":  round(_strict_score(legal_score), 3),
+        "tone":            round(_strict_score(tone_score), 3),
+        "length":          round(_strict_score(length_score), 3),
     }
 
 def grade_task3(action: dict, scenario: dict) -> dict:
     letter = str(action.get("letter", "")).strip()
     if not letter:
-        return {"score": _strict_score(0.0), "breakdown": {}, "reason": "Empty letter"}
+        return {"score": _strict_score(0.001), "breakdown": {}, "reason": "Empty letter"}
 
     criteria = scenario.get("grading_criteria", {})
     rb = _rule_based_score(letter, criteria)
@@ -151,7 +148,7 @@ Context:
 Letter:
 \"\"\"{letter[:1500]}\"\"\"
 
-Score this letter 0.0 to 1.0 on:
+Score this letter 0.001 to 0.999 on:
 - Legal assertiveness (not polite/begging)
 - Factual completeness (all key facts present)
 - Professional tone
@@ -171,10 +168,10 @@ Respond with ONLY a single float. Example: 0.74"""
         llm_score = None
 
     if llm_score is not None:
-        final  = _strict_score(0.5 * rb_combined + 0.5 * llm_score)
+        final  = round(_strict_score(0.5 * rb_combined + 0.5 * llm_score), 3)
         method = "rule_based + llm_judge (temp=0)"
     else:
-        final  = _strict_score(rb_combined)
+        final  = round(_strict_score(rb_combined), 3)
         method = "rule_based_only"
 
     return {
@@ -185,6 +182,10 @@ Respond with ONLY a single float. Example: 0.74"""
 
 
 # ── Task 3 Multi-turn grader ──────────────────
+# Critic suggestion: make Task 3 interactive.
+# Environment gives structured feedback after draft,
+# agent can revise. Up to 2 revision rounds.
+
 FEEDBACK_CHECKS = [
     ("MSMED Act 2006",      "msmed act",      "You did not cite the MSMED Act 2006. Add it explicitly."),
     ("interest rate",       "interest",       "You did not mention interest on overdue amount. Add compound interest at 3x RBI rate."),
