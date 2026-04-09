@@ -18,7 +18,8 @@ ENV_NAME     = "msme-dispute"
 
 
 def _strict_display_reward(value):
-    return max(0.001, min(0.999, float(value)))
+    # Keep two-decimal logs parser-friendly while avoiding 0.00/1.00 endpoints.
+    return max(0.01, min(0.99, float(value)))
 
 # Pre-written fallback actions — used when LLM API is unavailable.
 # These are real answers that will score > 0.05 from the grader.
@@ -65,11 +66,11 @@ def log_step(step, action, reward, done, error=None):
     a = json.dumps(action, separators=(',',':')).replace('\n',' ').replace('\r','')[:200] \
         if isinstance(action, dict) else str(action)[:200]
     display_reward = _strict_display_reward(reward)
-    print(f"[STEP] step={step} action={a} reward={display_reward:.3f} "
+    print(f"[STEP] step={step} action={a} reward={display_reward:.2f} "
           f"done={'true' if done else 'false'} error={error or 'null'}", flush=True)
 
 def log_end(success, steps, rewards):
-    display_rewards = ','.join(f'{_strict_display_reward(r):.3f}' for r in rewards)
+    display_rewards = ','.join(f'{_strict_display_reward(r):.2f}' for r in rewards)
     print(f"[END] success={'true' if success else 'false'} steps={steps} "
           f"rewards={display_rewards}", flush=True)
 

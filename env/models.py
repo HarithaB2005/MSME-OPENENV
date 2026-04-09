@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, List, Literal
 
 # ── Reward ────────────────────────────────────
 class MSMEReward(BaseModel):
-    score: float = Field(..., gt=0.0, lt=1.0, description="Reward in (0.0, 1.0)")
+    score: float = Field(..., gt=0.0001, lt=0.999, description="Reward in (0.0001, 0.999)")
     breakdown: Dict[str, Any] = Field(default_factory=dict)
     reason: str = ""
 

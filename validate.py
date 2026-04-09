@@ -70,7 +70,7 @@ for tid in [1, 2, 3]:
         r = requests.post(f"{ENV_URL}/step", json={"action": dummy_actions[t]}, timeout=30)
         data = r.json()
         reward = data.get("reward", -1)
-        in_range = 0.0 < float(reward) < 1.0
+        in_range = 0.001 < float(reward) < 0.999
         return r.status_code == 200 and in_range, f"reward={reward:.3f} (valid={in_range})"
     check(f"step() task {tid} returns reward in (0,1)", test_step)
 

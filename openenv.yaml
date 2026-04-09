@@ -23,10 +23,10 @@ tasks:
     action_space:
       type: categorical
       values: [delayed_payment, partial_payment, payment_denial]
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
     reward_description: >
       Scores are clamped strictly to (0,1) for validator compatibility:
-      exact~0.99, adjacent=0.4, wrong/invalid~0.01.
+      exact~0.999, adjacent=0.4, wrong/invalid~0.001.
 
   - id: 2
     name: extract_facts
@@ -45,7 +45,7 @@ tasks:
         amount:       {type: integer, unit: INR}
         due_date:     {type: string}
         days_overdue: {type: integer}
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
     reward_description: >
       Weighted field accuracy:
       claimant=0.25, opponent=0.25, amount=0.25,
@@ -66,7 +66,7 @@ tasks:
     action_space:
       type: text
       min_words: 150
-    reward_range: [0.0, 1.0]
+    reward_range: [0.001, 0.999]
     reward_description: >
       0.5 * rule_based (completeness + legal_elements + tone + length)
       + 0.5 * llm_judge (temperature=0, deterministic).

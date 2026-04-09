@@ -52,7 +52,7 @@ def list_tasks():
              "difficulty": "easy",
              "description": "Classify a payment dispute email into delayed_payment, partial_payment, or payment_denial.",
              "action_schema": {"label": "str — one of [delayed_payment, partial_payment, payment_denial]"},
-               "reward": "0.99 exact, 0.40 adjacent class, 0.05 wrong"},
+             "reward": "0.999 exact, 0.40 adjacent class, 0.001 wrong"},
             {"task_id": 2, "name": "extract_facts",
              "difficulty": "medium",
              "description": "Extract claimant, opponent, amount, due_date, days_overdue from a formal notice.",
