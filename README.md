@@ -15,6 +15,9 @@ An AI agent training environment for handling MSME (Micro, Small and Medium Ente
 
 Millions of small businesses in India face delayed payments from buyers. Most MSME owners lack access to affordable legal drafting support. This environment trains AI agents to classify disputes, extract facts, and draft formal demand letters — practical tasks with real-world impact.
 
+**Why this matters:** This is not a toy problem. Delayed payments are a systemic issue in India, and automating the legal drafting process (MSMED Act 2006 demands) directly solves a major bottleneck for small businesses.
+**Environment Design:** The environment features a unique **Sequential Chaining Mode**, where an agent's errors in early tasks (e.g., misclassifying a dispute) directly degrade the context provided in later tasks (e.g., drafting the letter). It also supports **Multi-turn Revision Loops** via an LLM+Rule based judge that provides actionable feedback on missing legal clauses.
+
 ## Tasks
 
 | Task | Difficulty | Description | Scoring |
@@ -56,6 +59,23 @@ uvicorn env.server:app --host 0.0.0.0 --port 7860
 
 # In another terminal:
 python inference.py
+```
+
+## Baseline Scores
+
+| Task | Model | Score | Agent Steps |
+|------|-------|-------|-------------|
+| 1. Classify | `gpt-4o-mini` | 0.400 | 1 |
+| 2. Extract Facts | `gpt-4o-mini` | 0.950 | 1 |
+| 3. Draft Letter | `gpt-4o-mini` | 0.375 | 3 (Multi-turn) |
+
+## Sample Inference Output
+
+```text
+[START] task=draft_demand_letter env=msme-dispute model=gpt-4o-mini
+[STEP] step=1 action={"letter": "..."} reward=0.25 done=false error=null
+[STEP] step=2 action={"letter": "..."} reward=0.38 done=true error=null
+[END] success=true steps=2 score=0.38 rewards=0.25,0.38
 ```
 
 ## Environment Variables

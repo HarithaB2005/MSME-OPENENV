@@ -157,7 +157,8 @@ def agent3(obs):
         f"Due date: {ctx.get('due_date','N/A')}\n"
         f"Amount: {amt}\n"
         f"Days overdue: {ctx.get('days_overdue')}\n"
-        f"Dispute: {ctx.get('dispute_type')}\n\n"
+        f"Dispute: {ctx.get('dispute_type')}\n"
+        f"{'' if not obs.get('note') else chr(10) + 'FEEDBACK FROM GRADER TO FIX:' + chr(10) + obs.get('note') + chr(10)}\n"
         f"MUST include ALL of these:\n"
         f"- MSMED Act 2006 (cite explicitly)\n"
         f"- Pay within 15 days\n"
@@ -181,14 +182,29 @@ def run_task(task_id: int, seed: int = 42) -> float:
     name = NAMES[task_id]
     log_start(name)
     score = 0.05
+    rewards = []
+    steps = 0
 
     try:
         resp   = call_env("reset", {"task_id": task_id, "seed": seed})
         obs    = resp["observation"]
-        action = AGENTS[task_id](obs)
-        result = call_env("step", {"action": action})
-        score  = _safe(float(result["reward"]))
-        log_step(1, action, score, True)
+        done   = False
+        
+        while not done and steps < 3:
+            steps += 1
+            action = AGENTS[task_id](obs)
+            result = call_env("step", {"action": action})
+            score  = _safe(float(result["reward"]))
+            done   = result.get("done", True)
+            rewards.append(score)
+            log_step(steps, action, score, done)
+            
+            # Wire multi-turn feedback for task 3
+            info = result.get("info", {})
+            feedback = info.get("feedback", [])
+            message = info.get("message", "")
+            if not done and feedback and task_id == 3:
+                obs["note"] = f"{message} Missing: " + ", ".join([f["missing"] for f in feedback])
 
     except Exception as e:
         print(f"# Task {task_id} agent failed: {e}", file=sys.stderr)
@@ -196,12 +212,16 @@ def run_task(task_id: int, seed: int = 42) -> float:
             call_env("reset", {"task_id": task_id, "seed": seed})
             result = call_env("step", {"action": FALLBACK[task_id]})
             score  = _safe(float(result["reward"]))
+            steps = 1
+            rewards = [score]
             log_step(1, FALLBACK[task_id], score, True)
         except Exception as e2:
             score = 0.05
+            steps = 1
+            rewards = [0.05]
             log_step(1, FALLBACK[task_id], 0.05, True, error=str(e2)[:60])
 
-    log_end(True, 1, score, [score])
+    log_end(True, steps, score, rewards)
     return score
 
 # ── Main ──────────────────────────────────────
