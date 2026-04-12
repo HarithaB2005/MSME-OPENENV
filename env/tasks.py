@@ -47,5 +47,47 @@ TASK3_SCENARIOS_EXTRA = [
     {"id":"t3_008","context":{"claimant":"Meenakshi Textiles","opponent":"Southern Exports Ltd","amount":320000,"invoice_no":"MT-7721","invoice_date":"1st November 2023","due_date":"1st December 2023","days_overdue":135,"dispute_type":"delayed_payment","evidence":["Invoice copy","Shipping bill","6 reminder emails","Legal notice draft"]},"grading_criteria":{"must_mention":["Meenakshi Textiles","Southern Exports","3,20,000","MT-7721"],"legal_elements":["MSME Facilitation Council","compound interest","legal proceedings","final notice"],"tone_keywords_bad":["we hope","please consider","if possible"]}},
 ]
 
-# Merge into main list
-TASK3_SCENARIOS = TASK3_SCENARIOS + TASK3_SCENARIOS_EXTRA
+# FIX 3: Elite Tier Data Augmentation - Edge Cases and Scaling
+TASK1_SCENARIOS_EXTRA = [
+    # Government Buyer Edge Case
+    {"id":"t1_011","email":{"subject":"Re: Invoice #GOV-99 on GeM Portal","body":"We acknowledge receipt of Invoice #GOV-99 for Rs. 5,50,000 via the Govt e-Marketplace. However, due to budget allocation delays from the Ministry, your payment is pending. We cannot give a firm date. Do not send further reminders."},"label":"delayed_payment"},
+    # International Buyer Edge Case
+    {"id":"t1_012","email":{"subject":"Payment for Export Order #EX-442","body":"Regarding Invoice #EX-442, our USA headquarters has rejected the payment. They claim the fabrics do not meet ASTM standards. We will not be releasing the $4,500 (approx Rs. 3,75,000) under any circumstances."},"label":"payment_denial"},
+    # Forged/Disputed Invoice Edge Case
+    {"id":"t1_013","email":{"subject":"Fraudulent billing claim - INV-0010","body":"Your demand for Rs. 1,20,000 against INV-0010 is completely baseless. We never signed any such PO with your agency. We consider this a forged invoice and flatly refuse to pay. If you press this, we will report you for fraud."},"label":"payment_denial"},
+    # Partial Payment regarding tax
+    {"id":"t1_014","email":{"subject":"TDS deduction and short payment","body":"Against your invoice of Rs. 2,00,000, we have released Rs. 1,70,000. We withheld Rs. 30,000 claiming it as penalty for late delivery, which was never in our contract. Please clear the pending Rs. 30,000 balance."},"label":"partial_payment"},
+    {"id":"t1_015","email":{"subject":"Delayed clearance of hardware invoice","body":"The laptops attached to Invoice #HW-84 were delivered 40 days ago. The due date was last week. Still waiting on the accounts team to process the Rs. 8,00,000 transfer."},"label":"delayed_payment"},
+    {"id":"t1_016","email":{"subject":"Discrepancy in monthly retainer","body":"For the April retainer (Rs. 85,000), we only received Rs. 40,000 in our bank. The narrative says 'part payment'. We need the remaining amount credited before next week to continue services."},"label":"partial_payment"},
+    {"id":"t1_017","email":{"subject":"Refusal to pay maintenance charges","body":"We are cancelling the AMC contract immediately and refusing to pay the outstanding Rs. 65,000. Your engineer was late by 2 hours last Tuesday, which we find unacceptable."},"label":"payment_denial"},
+    {"id":"t1_018","email":{"subject":"Overdue transport charges - Urgent","body":"Trip #442 for Rs. 35,000 from Mumbai to Pune is now 60 days overdue. We are a small logistics MSME and cannot afford these delays. Please pay immediately."},"label":"delayed_payment"},
+    {"id":"t1_019","email":{"subject":"Short receipt of Rs. 10,000","body":"We received the NEFT today but it's short by Rs. 10,000. Our invoice was for Rs. 1,50,000. Let us know when the remaining 10k will be processed."},"label":"partial_payment"},
+    {"id":"t1_020","email":{"subject":"Account closed - no payment will be made","body":"The management has decided to shut down the branch. We will not be honoring any pending invoices from last month, including yours for Rs. 2,25,000."},"label":"payment_denial"},
+]
+
+TASK2_SCENARIOS_EXTRA = [
+    # Government edge case
+    {"id":"t2_006","email":{"subject":"Notice to Municipal Corporation","body":"M/s GreenTech Solutions formally demands Rs. 8,50,000 from the Pune Municipal Corporation. Despite deliveries on 1st November 2023 and due date of 1st December 2023, the amount is unpaid. As of 15th April 2024, it is 136 days overdue."},"ground_truth":{"claimant":"GreenTech Solutions","opponent":"Pune Municipal Corporation","amount":850000,"due_date":"1st December 2023","days_overdue":136}},
+    # Hostile edge case
+    {"id":"t2_007","email":{"subject":"Final Warning - Pay Up Now","body":"Listen M/s Ruthless Retail, we at M/s Spark Traders are tired of your excuses. You owe us Rs. 45,000 for Invoice #99. It was due on 15th January 2024. Today is 15th April 2024. That is 91 days overdue. Pay it or face court."},"ground_truth":{"claimant":"Spark Traders","opponent":"Ruthless Retail","amount":45000,"due_date":"15th January 2024","days_overdue":91}},
+    # International edge case
+    {"id":"t2_008","email":{"subject":"International Default Notice","body":"M/s Indian Craftsmen Export demands payment from M/s London Boutique Ltd for Invoice #UK-01 for Rs. 6,20,000. The invoice was strictly due on 10th February 2024. It is now 15th April 2024, making it 65 days overdue."},"ground_truth":{"claimant":"Indian Craftsmen Export","opponent":"London Boutique Ltd","amount":620000,"due_date":"10th February 2024","days_overdue":65}},
+    {"id":"t2_009","email":{"subject":"Pending software license fees","body":"This is a formal intimation by M/s CodeCrafters LLP to M/s Healthcare Tech. The amount of Rs. 1,80,000 for annual licenses was due on 5th March 2024. Currently, the delay stands at 41 days (as of 15th April)."},"ground_truth":{"claimant":"CodeCrafters LLP","opponent":"Healthcare Tech","amount":180000,"due_date":"5th March 2024","days_overdue":41}},
+    {"id":"t2_010","email":{"subject":"Demand Notice - Equipment Supply","body":"M/s HeavyMachinery MSME formally notifies M/s Continental Builders regarding an unpaid sum of Rs. 12,00,000. The agreed due date was 20th December 2023. As of 15th April 2024, the payment is 117 days overdue."},"ground_truth":{"claimant":"HeavyMachinery MSME","opponent":"Continental Builders","amount":1200000,"due_date":"20th December 2023","days_overdue":117}},
+]
+
+TASK3_SCENARIOS_EDGE = [
+    # Government Buyer Edge Case
+    {"id":"t3_009","context":{"claimant":"GreenTech Solutions","opponent":"Pune Municipal Corporation","amount":850000,"invoice_no":"GT-001","invoice_date":"1st November 2023","due_date":"1st December 2023","days_overdue":136,"dispute_type":"delayed_payment","evidence":["GeM Portal upload receipt","Delivery acknowledgement"]},"grading_criteria":{"must_mention":["GreenTech","Pune Municipal","8,50,000","GT-001"],"legal_elements":["government buyer","GeM","MSMED Act 2006","interest"],"tone_keywords_bad":["we are small","please favor","begging"]}},
+    # Hostile Denied Payment (Forged accusation)
+    {"id":"t3_010","context":{"claimant":"Spark Traders","opponent":"Ruthless Retail","amount":120000,"invoice_no":"INV-101","invoice_date":"10th February 2024","due_date":"10th March 2024","days_overdue":36,"dispute_type":"payment_denial","evidence":["Signed PO","Email approving delivery","Counter-claim against forgery assertion"]},"grading_criteria":{"must_mention":["Spark Traders","Ruthless Retail","1,20,000","INV-101"],"legal_elements":["defamation","baseless","evidence acts","MSME Facilitation","legal action"],"tone_keywords_bad":["maybe","sorry","apologize"]}},
+    # International Dispute
+    {"id":"t3_011","context":{"claimant":"Indian Craftsmen Export","opponent":"London Boutique Ltd","amount":620000,"invoice_no":"UK-01","invoice_date":"10th January 2024","due_date":"10th February 2024","days_overdue":65,"dispute_type":"partial_payment","evidence":["Customs clearance","Signed BoL","Email confirming receipt"]},"grading_criteria":{"must_mention":["Indian Craftsmen","London Boutique","6,20,000","UK-01"],"legal_elements":["international arbitration","jurisdiction","MSME Export protection","interest"],"tone_keywords_bad":["please adjust","sorry for inconvenience"]}},
+    # Massive amount edge case
+    {"id":"t3_012","context":{"claimant":"HeavyMachinery MSME","opponent":"Continental Builders","amount":25000000,"invoice_no":"HM-MAX","invoice_date":"1st August 2023","due_date":"1st September 2023","days_overdue":227,"dispute_type":"delayed_payment","evidence":["Site installation sign-off","Multiple board-level emails"]},"grading_criteria":{"must_mention":["HeavyMachinery","Continental Builders","2,50,00,000","HM-MAX"],"legal_elements":["NCLT","insolvency","bankruptcy","MSME Act","interest"],"tone_keywords_bad":["kindly","requesting","amicable"]}},
+]
+
+# Merge into main lists
+TASK1_SCENARIOS = TASK1_SCENARIOS + TASK1_SCENARIOS_EXTRA
+TASK2_SCENARIOS = TASK2_SCENARIOS + TASK2_SCENARIOS_EXTRA
+TASK3_SCENARIOS = TASK3_SCENARIOS + TASK3_SCENARIOS_EXTRA + TASK3_SCENARIOS_EDGE
